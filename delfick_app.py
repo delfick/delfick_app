@@ -25,19 +25,79 @@ class App(object):
 
         .. autoattribute:: VERSION
 
+            The version of your application, best way is to define this somewhere and import it into your mainline and setup.py from that location
+
         .. autoattribute:: CliParserKls
+
+            The class to use for our CliParser
 
         .. autoattribute:: logging_handler_file
 
+            The file to log output to (default is stderr)
+
         .. autoattribute:: boto_useragent_name
 
-        .. autoattribute:: cli_description
+            The name to append to your boto useragent if that's a thing you want to happen
 
         .. autoattribute:: cli_categories
 
+            self.execute is passed a dictionary cli_args which is from looking at the args object returned by argparse
+
+            This option will break up arguments into hierarchies based on the name of the argument.
+
+            For example:
+
+            ``cli_categories = ['app']``
+
+            and we have arguments for ``[silent, verbose, debug, app_config, app_option1, app_option2]``
+
+            Then cli_args will be ``{"app": {"config": value, "option1": value, "option2": value}, "silent": value, "verbose": value, "debug": value}``
+
+        .. autoattribute:: cli_description
+
+            The description to give at the top of --help output
+
         .. autoattribute:: cli_environment_defaults
 
+            A map of environment variables to --argument that you want to map
+
+            For example:
+
+            ``cli_environment_defaults = {"APP_CONFIG": "--config"}``
+
+            Items may also be a tuple of ``(replacement, default)``
+
+            For example, ``{"APP_CONFIG": ("--config", "./config.yml")}``
+
+            Which means ``defaults["--config"] == {'default': "./config.yml"}`` if APP_CONFIG isn't in the environment.
+
         .. autoattribute:: cli_positional_replacements
+
+            A list mapping positional arguments to --arguments
+
+            For example:
+
+            ``cli_positional_replacements = ['--environment', '--stack']``
+                Will mean the first positional argument becomes the value for --environment and the second positional becomes the value for '--stack'
+
+                Note for this to work, you must do something like:
+
+                .. code-block:: python
+
+                    def setup_other_args(self, parser, defaults):
+                        parser.add_argument('--environment'
+                            , help = "the environment!"
+                            , **defaults['--environment']
+                            )
+
+            Items in positional_replacements may also be a tuple of ``(replacement, default)``
+
+            For example:
+
+            ``cli_positional_replacements = [('--task', 'list_tasks')]``
+                will mean the first positional argument becomes the value for --task
+
+                But if it's not specified, then ``defaults['--task'] == {"default": "list_tasks"}``
 
     ``Hooks``
 
@@ -53,78 +113,15 @@ class App(object):
     ########################
 
     VERSION = Ignore
-    """The version of your application, best way is to define this somewhere and import it into your mainline and setup.py from that location"""
+    boto_useragent_name = Ignore
 
     CliParserKls = property(lambda s: CliParser)
-    """The class to use for our CliParser"""
-
     logging_handler_file = property(lambda s: sys.stderr)
-    """The file to log output to (default is stderr)"""
-
-    boto_useragent_name = Ignore
-    """The name to append to your boto useragent if that's a thing you want to happen"""
-
-    cli_description = "My amazing app"
-    """The description to give at the top of --help output"""
-
-    cli_positional_replacements = None
-    """
-    A list mapping positional arguments to --arguments
-
-    For example:
-
-    ``cli_positional_replacements = ['--environment', '--stack']``
-        Will mean the first positional argument becomes the value for --environment and the second positional becomes the value for '--stack'
-
-        Note for this to work, you must do something like:
-
-        .. code-block:: python
-
-            def setup_other_args(self, parser, defaults):
-                parser.add_argument('--environment'
-                    , help = "the environment!"
-                    , **defaults['--environment']
-                    )
-
-    Items in positional_replacements may also be a tuple of ``(replacement, default)``
-
-    For example:
-
-    ``cli_positional_replacements = [('--task', 'list_tasks')]``
-        will mean the first positional argument becomes the value for --task
-
-        But if it's not specified, then ``defaults['--task'] == {"default": "list_tasks"}``
-    """
-
-    cli_environment_defaults = None
-    """
-    A map of environment variables to --argument that you want to map
-
-    For example:
-
-    ``cli_environment_defaults = {"APP_CONFIG": "--config"}``
-
-    Items may also be a tuple of ``(replacement, default)``
-
-    For example, ``{"APP_CONFIG": ("--config", "./config.yml")}``
-
-    Which means ``defaults["--config"] == {'default': "./config.yml"}`` if APP_CONFIG isn't in the environment.
-    """
 
     cli_categories = None
-    """
-    self.execute is passed a dictionary cli_args which is from looking at the args object returned by argparse
-
-    This option will break up arguments into hierarchies based on the name of the argument.
-
-    For example:
-
-    ``cli_categories = ['app']``
-
-    and we have arguments for ``[silent, verbose, debug, app_config, app_option1, app_option2]``
-
-    Then cli_args will be ``{"app": {"config": value, "option1": value, "option2": value}, "silent": value, "verbose": value, "debug": value}``
-    """
+    cli_description = "My amazing app"
+    cli_environment_defaults = None
+    cli_positional_replacements = None
 
     ########################
     ###   USAGE
