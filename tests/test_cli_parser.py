@@ -1,7 +1,5 @@
 # coding: spec
 
-from __future__ import print_function
-
 from delfick_app import CliParser, Ignore, BadOption
 
 from delfick_error import DelfickErrorTestMixin
