@@ -7,5 +7,3 @@ The API
 
 .. autoclass:: App
 
-
-

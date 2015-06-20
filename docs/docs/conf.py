@@ -22,4 +22,7 @@ source_suffix = '.rst'
 pygments_style = 'pastie'
 
 # Add options specific to this project
-execfile(os.path.join(this_dir, '../conf.py'), globals(), locals())
+location = os.path.join(this_dir, '../conf.py')
+with open(location) as f:
+    code = compile(f.read(), location, 'exec')
+    exec(code, globals(), locals())
