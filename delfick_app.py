@@ -18,6 +18,35 @@ class BadOption(DelfickError):
 ########################
 
 class App(object):
+    """
+    .. automethod:: main
+
+    ``Attributes``
+
+        .. autoattribute:: VERSION
+
+        .. autoattribute:: CliParserKls
+
+        .. autoattribute:: logging_handler_file
+
+        .. autoattribute:: boto_useragent_name
+
+        .. autoattribute:: cli_description
+
+        .. autoattribute:: cli_categories
+
+        .. autoattribute:: cli_environment_defaults
+
+        .. autoattribute:: cli_positional_replacements
+
+    ``Hooks``
+
+        .. automethod:: execute
+
+        .. automethod:: setup_other_logging
+
+        .. automethod:: specify_other_args
+    """
 
     ########################
     ###   SETTABLE PROPERTIES
@@ -42,39 +71,44 @@ class App(object):
     """
     A list mapping positional arguments to --arguments
 
-    For example
+    For example:
 
-    cli_positional_replacements = ['--environment', '--stack']
-    Will mean the first positional argument becomes the value for --environment and the second positional becomes the value for '--stack'
-    Note for this to work, you must do something like
+    ``cli_positional_replacements = ['--environment', '--stack']``
+        Will mean the first positional argument becomes the value for --environment and the second positional becomes the value for '--stack'
 
-    def setup_other_args(self, parser, defaults):
-        parser.add_argument('--environment'
-            , help = "the environment!"
-            , **defaults['--environment']
-            )
+        Note for this to work, you must do something like:
 
-    Items in positional_replacements may also be a tuple of (replacement, default)
+        .. code-block:: python
 
-    For example
+            def setup_other_args(self, parser, defaults):
+                parser.add_argument('--environment'
+                    , help = "the environment!"
+                    , **defaults['--environment']
+                    )
 
-    cli_positional_replacements = [('--task', 'list_tasks')]
-    will mean the first positional argument becomes the value for --task
-    But if it's not specified, then defaults['--task'] = {"default": "list_tasks"}
+    Items in positional_replacements may also be a tuple of ``(replacement, default)``
+
+    For example:
+
+    ``cli_positional_replacements = [('--task', 'list_tasks')]``
+        will mean the first positional argument becomes the value for --task
+
+        But if it's not specified, then ``defaults['--task'] == {"default": "list_tasks"}``
     """
 
     cli_environment_defaults = None
     """
     A map of environment variables to --argument that you want to map
 
-    For example
+    For example:
 
-    cli_environment_defaults = {"APP_CONFIG": "--config"}
+    ``cli_environment_defaults = {"APP_CONFIG": "--config"}``
 
-    Items may also be a tuple of (replacement, default)
+    Items may also be a tuple of ``(replacement, default)``
 
-    For example, {"APP_CONFIG": ("--config", "./config.yml")}
-    Which means defaults["--config"] = {'default': "./config.yml"} if APP_CONFIG isn't in the environment.
+    For example, ``{"APP_CONFIG": ("--config", "./config.yml")}``
+
+    Which means ``defaults["--config"] == {'default': "./config.yml"}`` if APP_CONFIG isn't in the environment.
     """
 
     cli_categories = None
@@ -83,13 +117,13 @@ class App(object):
 
     This option will break up arguments into hierarchies based on the name of the argument.
 
-    For example
+    For example:
 
-    cli_categories = ['app']
+    ``cli_categories = ['app']``
 
-    and we have arguments for [silent, verbose, debug, app_config, app_option1, app_option2]
+    and we have arguments for ``[silent, verbose, debug, app_config, app_option1, app_option2]``
 
-    Then cli_args will be {"app": {"config": value, "option1": value, "option2": value}, "silent": value, "verbose": value, "debug": value}
+    Then cli_args will be ``{"app": {"config": value, "option1": value, "option2": value}, "silent": value, "verbose": value, "debug": value}``
     """
 
     ########################
@@ -98,6 +132,20 @@ class App(object):
 
     @classmethod
     def main(kls):
+        """
+        Instantiates this class and calls the mainline
+
+        Usage is intended to be:
+
+        .. code-block:: python
+
+            from delfick_app import App
+
+            class MyApp(App):
+                [..]
+
+            main = MyApp.main
+        """
         app = kls()
         app.mainline()
 
@@ -109,22 +157,29 @@ class App(object):
         """
         Hook for setting up any other logging configuration
 
-        For example
-        logging.getLogger("boto").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
-        logging.getLogger("requests").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
-        logging.getLogger("paramiko.transport").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
+        For example:
+
+        .. code-block:: python
+
+            def setup_other_logging(self, args, verbose, silent, debug):
+                logging.getLogger("boto").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
+                logging.getLogger("requests").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
+                logging.getLogger("paramiko.transport").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
         """
 
     def specify_other_args(self, parser, defaults):
         """
         Hook for adding more arguments to the argparse Parser
 
-        For example
+        For example:
 
-        parser.add_argument("--special"
-            , help = "taste the rainbow"
-            , action = "store_true"
-            )
+        .. code-block:: python
+
+            def specify_other_args(self, parser, defaults):
+                parser.add_argument("--special"
+                    , help = "taste the rainbow"
+                    , action = "store_true"
+                    )
         """
 
     ########################
