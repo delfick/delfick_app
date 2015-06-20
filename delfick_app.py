@@ -259,23 +259,8 @@ class CliParser(object):
         if self.environment_defaults is None:
             self.environment_defaults = {}
 
-    def parse_args(self, argv=None):
-        """
-        Build up an ArgumentParser and parse our argv!
-
-        Also complain if any --argument is both specified explicitly and as a positional
-        """
-        args, other_args, defaults = self.split_args(argv)
-        parser = self.make_parser(defaults)
-        args = parser.parse_args(args)
-
-        for index, replacement in enumerate(self.positional_replacements):
-            if type(replacement) is tuple:
-                replacement, _ = replacement
-            if replacement in defaults and replacement in args:
-                raise BadOption("Please don't specify a task as a positional argument and as a --argument", argument=replacement, position=index+1)
-
-        return args, other_args
+    def specify_other_args(self, parser, defaults):
+        """Hook to specify more arguments"""
 
     def interpret_args(self, argv, categories=None):
         """
@@ -296,7 +281,7 @@ class CliParser(object):
             found = False
             for category in categories:
                 if key.startswith("{0}_".format(category)):
-                    cli_args[category][key[(len(category)+1)]] = val
+                    cli_args[category][key[(len(category)+1):]] = val
                     found = True
                     break
 
@@ -305,66 +290,38 @@ class CliParser(object):
 
         return args, extra, cli_args
 
+    def parse_args(self, argv=None):
+        """
+        Build up an ArgumentParser and parse our argv!
+
+        Also complain if any --argument is both specified explicitly and as a positional
+        """
+        args, other_args, defaults = self.split_args(argv)
+        parser = self.make_parser(defaults)
+        parsed = parser.parse_args(args)
+        self.check_args(args, defaults, self.positional_replacements)
+        return parsed, other_args
+
+    def check_args(self, args, defaults, positional_replacements):
+        """Check that we haven't specified an arg as positional and a --flag"""
+        for index, replacement in enumerate(positional_replacements):
+            if type(replacement) is tuple:
+                replacement, _ = replacement
+            if "default" in defaults.get(replacement, {}) and replacement in args:
+                raise BadOption("Please don't specify an option as a positional argument and as a --flag", argument=replacement, position=index+1)
 
     def split_args(self, argv):
         """
         Split up argv into args, other_args and defaults
-
-        Defaults are populated from mapping environment_defaults to --arguments
-        and mapping positional_replacements to --arguments
-
-        So if positional_replacements is [--stack] and argv is ["blah", "--stuff", 1]
-        defaults will equal {"--stack": {"default": "blah"}}
-
-        If environment_defaults is {"CONFIG_LOCATION": "--config"}
-        and os.environ["CONFIG_LOCATION"] = "/a/path/to/somewhere.yml"
-        then defaults will equal {"--config": {"default": "/a/path/to/somewhere.yml"}}
-
-        Positional arguments will override environment defaults.
 
         Other args is anything after a "--" and args is everything before a "--"
         """
         if argv is None:
             argv = sys.argv[1:]
 
-        argv = list(argv)
         args = []
+        argv = list(argv)
         extras = None
-        defaults = {}
-
-        class Ignore(object): pass
-
-        for env_name, replacement in self.environment_defaults.items():
-            default = Ignore
-            if type(replacement) is tuple:
-                replacement, default = replacement
-
-            if env_name in os.environ:
-                defaults[replacement] = {"default": os.environ[env_name]}
-            else:
-                if default is Ignore:
-                    defaults[replacement] = {}
-                else:
-                    defaults[replacement] = {"default": default}
-
-        for replacement in self.positional_replacements:
-            if type(replacement) is tuple:
-                replacement, _ = replacement
-            if argv and not argv[0].startswith("-"):
-                defaults[replacement] = {"default": argv[0]}
-                argv.pop()
-            else:
-                break
-
-        for replacement in self.positional_replacements:
-            default = Ignore
-            if type(replacement) is tuple:
-                replacement, default = replacement
-            if replacement not in defaults:
-                if default is Ignore:
-                    defaults[replacement] = {}
-                else:
-                    defaults[replacement] = {"default": default}
 
         while argv:
             nxt = argv.pop(0)
@@ -379,7 +336,65 @@ class CliParser(object):
         if extras:
             other_args = " ".join(extras)
 
+        defaults = self.make_defaults(args, self.positional_replacements, self.environment_defaults)
         return args, other_args, defaults
+
+    def make_defaults(self, argv, positional_replacements, environment_defaults):
+        """
+        Make and return a dictionary of {--flag: {"default": value}}
+
+        This method will also remove the positional arguments from argv
+        that map to positional_replacements.
+
+        Defaults are populated from mapping environment_defaults to --arguments
+        and mapping positional_replacements to --arguments
+
+        So if positional_replacements is [--stack] and argv is ["blah", "--stuff", 1]
+        defaults will equal {"--stack": {"default": "blah"}}
+
+        If environment_defaults is {"CONFIG_LOCATION": "--config"}
+        and os.environ["CONFIG_LOCATION"] = "/a/path/to/somewhere.yml"
+        then defaults will equal {"--config": {"default": "/a/path/to/somewhere.yml"}}
+
+        Positional arguments will override environment defaults.
+        """
+        defaults = {}
+
+        class Ignore(object): pass
+
+        for env_name, replacement in environment_defaults.items():
+            default = Ignore
+            if type(replacement) is tuple:
+                replacement, default = replacement
+
+            if env_name in os.environ:
+                defaults[replacement] = {"default": os.environ[env_name]}
+            else:
+                if default is Ignore:
+                    defaults[replacement] = {}
+                else:
+                    defaults[replacement] = {"default": default}
+
+        for replacement in positional_replacements:
+            if type(replacement) is tuple:
+                replacement, _ = replacement
+            if argv and not argv[0].startswith("-"):
+                defaults[replacement] = {"default": argv[0]}
+                argv.pop(0)
+            else:
+                break
+
+        for replacement in positional_replacements:
+            default = Ignore
+            if type(replacement) is tuple:
+                replacement, default = replacement
+            if replacement not in defaults:
+                if default is Ignore:
+                    defaults[replacement] = {}
+                else:
+                    defaults[replacement] = {"default": default}
+
+        return defaults
 
     def make_parser(self, defaults):
         """Create an argparse ArgumentParser, setup --verbose, --silent, --debug and call specify_other_args"""
