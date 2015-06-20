@@ -1,12 +1,14 @@
 from __future__ import print_function
 
 from rainbow_logging_handler import RainbowLoggingHandler
-from input_algorithms.spec_base import NotSpecified
 from delfick_error import DelfickError, UserQuit
 import argparse
 import logging
 import sys
 import os
+
+class Ignore(object):
+    pass
 
 class BadOption(DelfickError):
     desc = "Bad option"
@@ -21,7 +23,7 @@ class App(object):
     ###   SETTABLE PROPERTIES
     ########################
 
-    VERSION = NotSpecified
+    VERSION = Ignore
     """The version of your application, best way is to define this somewhere and import it into your mainline and setup.py from that location"""
 
     CliParserKls = property(lambda s: CliParser)
@@ -30,7 +32,7 @@ class App(object):
     logging_handler_file = property(lambda s: sys.stderr)
     """The file to log output to (default is stderr)"""
 
-    boto_useragent_name = NotSpecified
+    boto_useragent_name = Ignore
     """The name to append to your boto useragent if that's a thing you want to happen"""
 
     cli_description = "My amazing app"
@@ -131,7 +133,7 @@ class App(object):
 
     def set_boto_useragent(self):
         """Make boto report this application as the user agent"""
-        if self.boto_useragent_name is not NotSpecified and self.VERSION is not NotSpecified:
+        if self.boto_useragent_name is not Ignore and self.VERSION is not Ignore:
             __import__("boto")
             useragent = sys.modules["boto.connection"].UserAgent
             if self.boto_useragent_name not in useragent:
