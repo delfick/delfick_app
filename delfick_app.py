@@ -191,7 +191,7 @@ class App(object):
             if self.boto_useragent_name not in useragent:
                 sys.modules["boto.connection"].UserAgent = "{0} {1}/{2}".format(useragent, self.boto_useragent_name, self.VERSION)
 
-    def mainline(self, argv=None):
+    def mainline(self, argv=None, print_errors_to=sys.stdout):
         """
         The mainline for the application
 
@@ -214,17 +214,17 @@ class App(object):
                     raise
                 raise UserQuit()
         except DelfickError as error:
-            print("")
-            print("!" * 80)
-            print("Something went wrong! -- {0}".format(error.__class__.__name__))
-            print("\t{0}".format(error))
+            print("", file=print_errors_to)
+            print("!" * 80, file=print_errors_to)
+            print("Something went wrong! -- {0}".format(error.__class__.__name__), file=print_errors_to)
+            print("\t{0}".format(error), file=print_errors_to)
             if cli_parser and cli_parser.parse_args(argv)[0].debug:
                 raise
             sys.exit(1)
 
-    def setup_logging(self, args, verbose=False, silent=False, debug=False):
+    def setup_logging(self, args, verbose=False, silent=False, debug=False, logging_name=""):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
-        log = logging.getLogger("")
+        log = logging.getLogger(logging_name)
         handler = RainbowLoggingHandler(self.logging_handler_file)
         handler._column_color['%(asctime)s'] = ('cyan', None, False)
         handler._column_color['%(levelname)-7s'] = ('green', None, False)

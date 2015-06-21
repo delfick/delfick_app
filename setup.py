@@ -7,7 +7,7 @@ setup(
 
     , install_requires =
       [ 'argparse'
-      , 'delfick_error==1.7'
+      , 'delfick_error==1.7.1'
       , 'rainbow_logging_handler==2.2.2'
       ]
 
@@ -16,6 +16,7 @@ setup(
         [ "noseOfYeti>=1.4.9"
         , "nose"
         , "mock"
+        , "boto"
         ]
       }
 
