@@ -27,7 +27,7 @@ Usage
         cli_environment_defaults = {"CONFIG_LOCATION": ("--config", './config.yml')}
         cli_positional_replacements = [('--task', 'list_tasks'), '--environment']
 
-        def execute(self, args, cli_args, logging_handler):
+        def execute(self, args, extra_args, cli_args, logging_handler):
             app = MyApp()
             app.start(cli_args)
 
