@@ -95,7 +95,7 @@ describe TestCase, "App":
                 def execute(slf, args, extra_args, cli_args, handler):
                     raise error
 
-            with self.assertRaises(ValueError):
+            with self.fuzzyAssertRaisesError(ValueError):
                 MyApp().mainline([])
 
         it "raises DelfickError exceptions if we have --debug":
@@ -112,7 +112,7 @@ describe TestCase, "App":
                 def execute(slf, args, extra_args, cli_args, handler):
                     raise KeyboardInterrupt()
 
-            with self.assertRaises(KeyboardInterrupt):
+            with self.fuzzyAssertRaisesError(KeyboardInterrupt):
                 MyApp().mainline(['--debug'])
 
         it "parse args, sets up logging, sets boto agent and calls execute":
