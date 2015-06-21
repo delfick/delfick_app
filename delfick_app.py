@@ -7,6 +7,8 @@ import logging
 import sys
 import os
 
+log = logging.getLogger("delfick_app")
+
 class Ignore(object):
     pass
 
@@ -237,6 +239,23 @@ class App(object):
 
         self.setup_other_logging(args, verbose, silent, debug)
         return handler
+
+    def setup_logging_theme(self, handler, colors="light"):
+        """
+        Setup a logging theme
+
+        Currently there is only ``light`` and ``dark`` which consists of a difference
+        in color for INFO level messages.
+        """
+        if colors not in ("light", "dark"):
+            log.warning("Told to set colors to a theme we don't have\tgot=%s\thave=[light, dark]", colors)
+            return
+
+        # Haven't put much effort into actually working out more than just the message colour
+        if colors == "light":
+            handler._column_color['%(message)s'][logging.INFO] = ('cyan', None, False)
+        else:
+            handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
 
     def make_cli_parser(self):
         """Return a CliParser instance"""

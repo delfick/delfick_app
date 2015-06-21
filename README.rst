@@ -28,6 +28,10 @@ Usage
         cli_positional_replacements = [('--task', 'list_tasks'), '--environment']
 
         def execute(self, args, extra_args, cli_args, logging_handler):
+            # Optionally set the logging theme between 'light' and 'dark'
+            self.setup_logging_theme(logging_handler, colors="dark")
+
+            # Do what is necessary to start the app
             app = MyApp()
             app.start(cli_args)
 
