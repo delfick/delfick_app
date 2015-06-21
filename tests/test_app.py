@@ -3,6 +3,7 @@
 from delfick_app import App, CliParser
 
 from delfick_error import DelfickError, DelfickErrorTestMixin
+from six.moves import StringIO
 from unittest import TestCase
 from textwrap import dedent
 import datetime
@@ -42,61 +43,51 @@ describe TestCase, "App":
 
     describe "mainline":
         it "catches DelfickError errors and prints them nicely":
-            fle = None
+            fle = StringIO()
+            class MyApp(App):
+                def execute(slf, args, extra_args, cli_args, handler):
+                    raise DelfickError("Well this should work", blah=1, _errors=[DelfickError("SubError", meh=2), DelfickError("SubError2", stuff=3)])
+
             try:
-                with tempfile.NamedTemporaryFile(delete=False) as fle:
-                    class MyApp(App):
-                        def execute(slf, args, extra_args, cli_args, handler):
-                            raise DelfickError("Well this should work", blah=1, _errors=[DelfickError("SubError", meh=2), DelfickError("SubError2", stuff=3)])
+                MyApp().mainline([], print_errors_to=fle)
+                assert False, "This should have failed"
+            except SystemExit as error:
+                self.assertEqual(error.code, 1)
 
-                    try:
-                        MyApp().mainline([], print_errors_to=fle)
-                        assert False, "This should have failed"
-                    except SystemExit as error:
-                        self.assertEqual(error.code, 1)
+            fle.flush()
+            fle.seek(0)
+            self.assertEqual(fle.read(), dedent("""
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                Something went wrong! -- DelfickError
+                \t"Well this should work"\tblah=1
+                errors:
+                =======
 
-                    fle.flush()
-                    fle.seek(0)
-                    self.assertEqual(fle.read(), dedent("""
-                        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        Something went wrong! -- DelfickError
-                        \t"Well this should work"\tblah=1
-                        errors:
-                        =======
-
-                        \t"SubError"\tmeh=2
-                        -------
-                        \t"SubError2"\tstuff=3
-                        -------
-                    """))
-            finally:
-                if fle and os.path.exists(fle.name):
-                    os.remove(fle.name)
+                \t"SubError"\tmeh=2
+                -------
+                \t"SubError2"\tstuff=3
+                -------
+            """))
 
         it "Converts KeyboardInterrupt into a UserQuit":
-            fle = None
+            fle = StringIO()
+            class MyApp(App):
+                def execute(slf, args, extra_args, cli_args, handler):
+                    raise KeyboardInterrupt()
+
             try:
-                with tempfile.NamedTemporaryFile(delete=False) as fle:
-                    class MyApp(App):
-                        def execute(slf, args, extra_args, cli_args, handler):
-                            raise KeyboardInterrupt()
+                MyApp().mainline([], print_errors_to=fle)
+                assert False, "This should have failed"
+            except SystemExit as error:
+                self.assertEqual(error.code, 1)
 
-                    try:
-                        MyApp().mainline([], print_errors_to=fle)
-                        assert False, "This should have failed"
-                    except SystemExit as error:
-                        self.assertEqual(error.code, 1)
-
-                    fle.flush()
-                    fle.seek(0)
-                    self.assertEqual(fle.read(), dedent("""
-                        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        Something went wrong! -- UserQuit
-                        \t"User Quit"
-                    """))
-            finally:
-                if fle and os.path.exists(fle.name):
-                    os.remove(fle.name)
+            fle.flush()
+            fle.seek(0)
+            self.assertEqual(fle.read(), dedent("""
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                Something went wrong! -- UserQuit
+                \t"User Quit"
+            """))
 
         it "Does not catch non DelfickError exceptions":
             error = ValueError("hi")
@@ -167,56 +158,51 @@ describe TestCase, "App":
 
     describe "setup_logging":
         it "works":
-            fle = None
-            try:
-                with tempfile.NamedTemporaryFile(delete=False) as fle:
-                    class MyApp(App):
-                        logging_handler_file = fle
+            fle = StringIO()
+            class MyApp(App):
+                logging_handler_file = fle
 
-                    app = MyApp()
-                    args, _, _ = app.make_cli_parser().interpret_args([])
-                    logging_handler = app.setup_logging(args, logging_name="blah")
+            app = MyApp()
+            args, _, _ = app.make_cli_parser().interpret_args([])
+            logging_handler = app.setup_logging(args, logging_name="blah")
 
-                    log = logging.getLogger("blah")
-                    log.propagate = False
+            log = logging.getLogger("blah")
+            log.propagate = False
 
-                    log.info("hello there")
-                    log.error("hmmm")
-                    log.debug("not captured")
-                    log.warning("yeap")
+            log.info("hello there")
+            log.error("hmmm")
+            log.debug("not captured")
+            log.warning("yeap")
 
-                    log.removeHandler(logging_handler)
-                    args, _, _ = app.make_cli_parser().interpret_args(['--verbose'])
-                    logging_handler = app.setup_logging(args, verbose=args.verbose, logging_name="blah")
-                    log.debug("this one is captured")
+            log.removeHandler(logging_handler)
+            args, _, _ = app.make_cli_parser().interpret_args(['--verbose'])
+            logging_handler = app.setup_logging(args, verbose=args.verbose, logging_name="blah")
+            log.debug("this one is captured")
 
-                    log.removeHandler(logging_handler)
-                    args, _, _ = app.make_cli_parser().interpret_args(['--silent'])
-                    logging_handler = app.setup_logging(args, silent=args.silent, logging_name="blah")
-                    log.debug("not captured")
-                    log.warning("not captured")
-                    log.info("not captured")
-                    log.error("also captured")
+            log.removeHandler(logging_handler)
+            args, _, _ = app.make_cli_parser().interpret_args(['--silent'])
+            logging_handler = app.setup_logging(args, silent=args.silent, logging_name="blah")
+            log.debug("not captured")
+            log.warning("not captured")
+            log.info("not captured")
+            log.error("also captured")
 
-                    fle.flush()
-                    fle.seek(0)
-                    logs = fle.readlines()
-                    now = datetime.datetime.now()
-                    date = now.strftime("%Y-%m-%d [^ ]+")
-                    expect = [
-                          re.compile("{0} INFO    blah            hello there".format(date))
-                        , re.compile("{0} ERROR   blah            hmmm".format(date))
-                        , re.compile("{0} WARNING blah            yeap".format(date))
-                        , re.compile("{0} DEBUG   blah            this one is captured".format(date))
-                        , re.compile("{0} ERROR   blah            also captured".format(date))
-                        ]
+            fle.flush()
+            fle.seek(0)
+            logs = fle.readlines()
+            now = datetime.datetime.now()
+            date = now.strftime("%Y-%m-%d [^ ]+")
+            expect = [
+                    re.compile("{0} INFO    blah            hello there".format(date))
+                , re.compile("{0} ERROR   blah            hmmm".format(date))
+                , re.compile("{0} WARNING blah            yeap".format(date))
+                , re.compile("{0} DEBUG   blah            this one is captured".format(date))
+                , re.compile("{0} ERROR   blah            also captured".format(date))
+                ]
 
-                    self.assertEqual(len(expect), len(logs), logs)
-                    for index, line in enumerate(expect):
-                        assert line.match(logs[index].strip()), "Expected '{0}' to match '{1}'".format(logs[index].strip().replace('\t', '\\t').replace(' ', '.'), line.pattern.replace('\t', '\\t').replace(' ', '.'))
-            finally:
-                if fle and os.path.exists(fle.name):
-                    os.remove(fle.name)
+            self.assertEqual(len(expect), len(logs), logs)
+            for index, line in enumerate(expect):
+                assert line.match(logs[index].strip()), "Expected '{0}' to match '{1}'".format(logs[index].strip().replace('\t', '\\t').replace(' ', '.'), line.pattern.replace('\t', '\\t').replace(' ', '.'))
 
     describe "make_cli_parser":
         it "creates a CliParser with specify_other_args grafted onto it and initialized with self.cli_ attributes":
