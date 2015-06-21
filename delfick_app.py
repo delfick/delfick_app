@@ -146,7 +146,7 @@ class App(object):
         app = kls()
         app.mainline()
 
-    def execute(self, args, cli_args, logging_handler):
+    def execute(self, args, extra_args, cli_args, logging_handler):
         """Hook for executing the application itself"""
         raise NotImplementedError()
 
@@ -205,10 +205,10 @@ class App(object):
         try:
             cli_parser = self.make_cli_parser()
             try:
-                args, cli_args = cli_parser.interpret_args(argv, self.cli_categories)
+                args, extra_args, cli_args = cli_parser.interpret_args(argv, self.cli_categories)
                 handler = self.setup_logging(args, verbose=args.verbose, silent=args.silent, debug=args.debug)
                 self.set_boto_useragent()
-                self.execute(args, cli_args, handler)
+                self.execute(args, extra_args, cli_args, handler)
             except KeyboardInterrupt:
                 if cli_parser and cli_parser.parse_args(argv)[0].debug:
                     raise
