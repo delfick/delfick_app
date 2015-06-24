@@ -1,10 +1,43 @@
 Delfick App
 ===========
 
-An opinionated class to build a mainline executable.
+A framework to simplify and remove duplication when creating a new application.
+It is opinionated in nature and aims to be declarative.
 
-Usage
------
+Getting Started
+---------------
+
+The most basic example of usage would look something like:
+
+.. code-block:: python
+
+    #!/usr/bin/env python
+    from delfick_app import App
+
+    class MyApp(object):
+        def start(self, cli_args):
+            print "hello world"
+
+    class Main(App):
+        def execute(self, args, extra_args, cli_args, logging_handler):
+            """Start your app!"""
+            MyApp().start(cli_args)
+
+    main = Main.main
+    if __name__ == "__main__":
+        main()
+
+This will give you a usage that looks like:
+
+    $ ./app.py [--verbose|--silent|--debug]
+
+Where --verbose and --debug show more logs and --silent silences all the logs.
+
+Your logs will be colourful and your mainline will catch and print any
+DelfickError exceptions nicely to the terminal.
+
+Advanced Usage
+--------------
 
 .. code-block:: python
 
@@ -13,7 +46,7 @@ Usage
     from delfick_app import App
     import logging
 
-    class MyApp(App):
+    class Main(App):
 
         # Setting both VERSION and boto_useragent_name
         # Will change boto's useragent to include {name}/{VERSION}
@@ -54,7 +87,7 @@ Usage
                 , **defaults["--config"]
                 )
 
-    main = MyApp.main
+    main = Main.main
     if __name__ == '__main__':
         main()
 
