@@ -68,7 +68,7 @@ describe TestCase, "CliParser":
 
             make_parser.assert_called_once_with(defaults)
             parser.parse_args.assert_called_once_with(args)
-            check_args.assert_called_once_with(args, defaults, positional_replacements)
+            check_args.assert_called_once_with(argv, defaults, positional_replacements)
 
         it "works":
             class Parser(CliParser):
@@ -143,6 +143,42 @@ describe TestCase, "CliParser":
             self.assertEqual(args.other, "3")
 
             self.assertEqual(cli_args, {"my_app": {"one": "1", "two": "2"}, "other": "3", "silent": False, "debug": False, "verbose": False})
+
+        it "Doesn't complain about flagged values in positional placement":
+            class Parser(CliParser):
+                def specify_other_args(slf, parser, defaults):
+                    parser.add_argument("--one"
+                        , **defaults["--one"]
+                        )
+                    parser.add_argument("--two"
+                        , **defaults["--two"]
+                        )
+                    parser.add_argument("--three"
+                        , **defaults["--three"]
+                        )
+
+            parser = Parser("", ["--one", "--two", ("--three", 'dflt')], {})
+            parsed, extra, cli_args = parser.interpret_args(['whatever', '--three', 'whatever2', '--two', 'stuff'])
+            self.assertEqual(parsed.one, "whatever")
+            self.assertEqual(parsed.two, "stuff")
+            self.assertEqual(parsed.three, "whatever2")
+
+        it "does complain about flagged values combined with positional placement":
+            class Parser(CliParser):
+                def specify_other_args(slf, parser, defaults):
+                    parser.add_argument("--one"
+                        , **defaults["--one"]
+                        )
+                    parser.add_argument("--two"
+                        , **defaults["--two"]
+                        )
+                    parser.add_argument("--three"
+                        , **defaults["--three"]
+                        )
+
+            parser = Parser("", ["--one", "--two", ("--three", 'dflt')], {})
+            with self.fuzzyAssertRaisesError(BadOption, "Please don't specify an option as a positional argument and as a --flag", argument="--two", position=2):
+                parsed, extra, cli_args = parser.interpret_args(['whatever', 'trees', 'whatever2', '--two', 'stuff'])
 
     describe "make_defaults":
         it "has no defaults if there are no positional_replacements or environment_defaults":

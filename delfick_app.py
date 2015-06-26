@@ -318,15 +318,25 @@ class CliParser(object):
         args, other_args, defaults = self.split_args(argv)
         parser = self.make_parser(defaults)
         parsed = parser.parse_args(args)
-        self.check_args(args, defaults, self.positional_replacements)
+        self.check_args(argv, defaults, self.positional_replacements)
         return parsed, other_args
 
-    def check_args(self, args, defaults, positional_replacements):
+    def check_args(self, argv, defaults, positional_replacements):
         """Check that we haven't specified an arg as positional and a --flag"""
+        num_positionals = 0
+        args = []
+        for thing in argv:
+            if thing == "--":
+                break
+            if thing.startswith("-"):
+                args.append(thing)
+            elif not args:
+                num_positionals += 1
+
         for index, replacement in enumerate(positional_replacements):
             if type(replacement) is tuple:
                 replacement, _ = replacement
-            if "default" in defaults.get(replacement, {}) and replacement in args:
+            if index < num_positionals and "default" in defaults.get(replacement, {}) and replacement in args:
                 raise BadOption("Please don't specify an option as a positional argument and as a --flag", argument=replacement, position=index+1)
 
     def split_args(self, argv):
