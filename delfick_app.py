@@ -315,6 +315,8 @@ class CliParser(object):
 
         Also complain if any --argument is both specified explicitly and as a positional
         """
+        if argv is None:
+            argv = sys.argv[1:]
         args, other_args, defaults = self.split_args(argv)
         parser = self.make_parser(defaults)
         parsed = parser.parse_args(args)
