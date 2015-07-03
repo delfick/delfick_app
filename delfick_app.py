@@ -228,6 +228,10 @@ class App(object):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
         log = logging.getLogger(logging_name)
         handler = RainbowLoggingHandler(self.logging_handler_file)
+        handler.delfick_app = True
+        if any(getattr(h, "delfick_app", False) for h in log.handlers):
+            return
+
         handler._column_color['%(asctime)s'] = ('cyan', None, False)
         handler._column_color['%(levelname)-7s'] = ('green', None, False)
         handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
