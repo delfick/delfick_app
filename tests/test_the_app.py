@@ -19,12 +19,13 @@ describe TestCase, "App":
     describe "main":
         it "Instantiates the class and calls the mainline":
             called = []
+            argv = mock.Mock(name='argv')
             class MyApp(App):
-                def mainline(self):
-                    called.append(1)
+                def mainline(self, argv=None):
+                    called.append(argv)
 
-            MyApp.main()
-            self.assertEqual(called, [1])
+            MyApp.main(argv)
+            self.assertEqual(called, [argv])
 
     describe "set_boto_useragent":
         it "can set the boto useragent":

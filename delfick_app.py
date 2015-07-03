@@ -130,7 +130,7 @@ class App(object):
     ########################
 
     @classmethod
-    def main(kls):
+    def main(kls, argv=None, **execute_args):
         """
         Instantiates this class and calls the mainline
 
@@ -146,7 +146,7 @@ class App(object):
             main = MyApp.main
         """
         app = kls()
-        app.mainline()
+        app.mainline(argv, **execute_args)
 
     def execute(self, args, extra_args, cli_args, logging_handler):
         """Hook for executing the application itself"""
@@ -193,7 +193,7 @@ class App(object):
             if self.boto_useragent_name not in useragent:
                 sys.modules["boto.connection"].UserAgent = "{0} {1}/{2}".format(useragent, self.boto_useragent_name, self.VERSION)
 
-    def mainline(self, argv=None, print_errors_to=sys.stdout):
+    def mainline(self, argv=None, print_errors_to=sys.stdout, **execute_args):
         """
         The mainline for the application
 
@@ -210,7 +210,7 @@ class App(object):
                 args, extra_args, cli_args = cli_parser.interpret_args(argv, self.cli_categories)
                 handler = self.setup_logging(args, verbose=args.verbose, silent=args.silent, debug=args.debug)
                 self.set_boto_useragent()
-                self.execute(args, extra_args, cli_args, handler)
+                self.execute(args, extra_args, cli_args, handler, **execute_args)
             except KeyboardInterrupt:
                 if cli_parser and cli_parser.parse_args(argv)[0].debug:
                     raise
