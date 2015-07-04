@@ -8,7 +8,12 @@ The API
 .. autoclass:: App
 
 Argparse Helpers
-================
+----------------
 
 .. autoclass:: DelayedFileType
+
+Command output
+--------------
+
+.. autofunction:: command_output
 

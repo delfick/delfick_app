@@ -2,8 +2,14 @@ from __future__ import print_function
 
 from rainbow_logging_handler import RainbowLoggingHandler
 from delfick_error import DelfickError, UserQuit
+import subprocess
 import argparse
 import logging
+import signal
+import shlex
+import fcntl
+import time
+import six
 import sys
 import os
 
@@ -14,6 +20,9 @@ class Ignore(object):
 
 class BadOption(DelfickError):
     desc = "Bad option"
+
+class CouldntKill(DelfickError):
+    desc = "Bad process"
 
 ########################
 ###   APP
@@ -489,4 +498,120 @@ class DelayedFileType(object):
                 except IOError as error:
                     raise argparse.ArgumentTypeError(error)
             return opener
+
+########################
+###   PROCESSES
+########################
+
+def read_non_blocking(stream):
+    """Read from a non-blocking stream"""
+    if stream:
+        while True:
+            nxt = ''
+            try:
+                nxt = stream.readline()
+            except IOError:
+                pass
+
+            if nxt:
+                yield nxt
+            else:
+                break
+
+def command_output(command, *command_extras, **kwargs):
+    """
+    Get the output from a command
+
+    Does so in a non blocking fashion and will ensure that the process ends.
+
+    Keyword arguments are:
+
+    timeout
+        Defaults to 10, if the process isn't over by this timeout, it will be sent a SIGTERM
+
+        If that doesn't kill it, a SIGKILL is sent to it
+
+    verbose
+        Defaults to False and makes the command a bit more verbose
+
+    stdin
+        Defaults to None. If specified, it is sent to the process as stdin
+
+    Command is split with shlex.split and is prepended to command_extras to create the command for the process
+
+    The return of this command is (output, status) where output is the stderr and stdout of the process
+    and status is the exit code of the process.
+    """
+    output = []
+    cwd = kwargs.get("cwd", None)
+    if isinstance(command, six.string_types):
+        args = shlex.split(' '.join([command] + list(command_extras)))
+    else:
+        args = command + shlex.split(' '.join(list(command_extras)))
+    stdin = kwargs.get("stdin", None)
+    timeout = kwargs.get("timeout", 10)
+    verbose = kwargs.get("verbose", False)
+
+    log_level = log.info if verbose else log.debug
+    log_level("Running command\targs=%s", args)
+
+    process_kwargs = {"stderr": subprocess.STDOUT, "stdout": subprocess.PIPE, "cwd": cwd}
+    if stdin is not None:
+        process_kwargs["stdin"] = stdin
+    process = subprocess.Popen(args, **process_kwargs)
+
+    fl = fcntl.fcntl(process.stdout, fcntl.F_GETFL)
+    fcntl.fcntl(process.stdout, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+    start = time.time()
+    while True:
+        if time.time() - start > timeout:
+            break
+        if process.poll() is not None:
+            break
+        for nxt in read_non_blocking(process.stdout):
+            output.append(nxt.decode("utf8").strip())
+            if verbose: print(output[-1])
+        time.sleep(0.01)
+
+    attempted_sigkill = False
+    if process.poll() is None:
+        start = time.time()
+        log.error("Command taking longer than timeout (%s). Terminating now\tcommand=%s", timeout, args)
+        process.terminate()
+
+        while True:
+            if time.time() - start > timeout:
+                break
+            if process.poll() is not None:
+                break
+            for nxt in read_non_blocking(process.stdout):
+                output.append(nxt.decode("utf8").strip())
+                if verbose: print(output[-1])
+            time.sleep(0.01)
+
+        if process.poll() is None:
+            log.error("Command took another %s seconds after terminate, so sigkilling it now", timeout)
+            os.kill(process.pid, signal.SIGKILL)
+            attempted_sigkill = True
+
+    for nxt in read_non_blocking(process.stdout):
+        output.append(nxt.decode("utf8").strip())
+        if verbose: print(output[-1])
+
+    if attempted_sigkill:
+        time.sleep(0.01)
+        if process.poll() is None:
+            raise CouldntKill("Failed to sigkill hanging process", pid=process.pid, command=args, output="\n".join(output))
+
+    if process.poll() != 0:
+        log.error("Failed to run command\tcommand=%s", args)
+
+    for nxt in read_non_blocking(process.stdout):
+        nxt_out = nxt.decode("utf8").strip()
+        output.append(nxt_out)
+        if verbose:
+            print(nxt_out)
+
+    return output, process.poll()
 
