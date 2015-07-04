@@ -454,3 +454,39 @@ class CliParser(object):
         self.specify_other_args(parser, defaults)
         return parser
 
+########################
+###   ARGPARSE
+########################
+
+class DelayedFileType(object):
+    """
+    Argparse in python2.6 is silly and tries to open the default
+
+    So, to get around this, we create an argparse type that returns a function.
+
+    Thus delaying opening the file until we have the value that is specified by the commandline::
+
+        parser = argparse.ArgumentParser(description="My amazing application")
+        parser.add_argument("--config"
+            , help = "Config file for my amazing application"
+            , default = "./fileThatDoesntNecesarilyExist.yml"
+            , type = delfick_app.DelayedFileType('r')
+            )
+
+        args = parser.parse_args(["--config", "./fileThatExists.yml"])
+        config = args.config()
+    """
+    def __init__(self, mode):
+        self.mode = mode
+
+    def __call__(self, location):
+        if hasattr(location, "read") and hasattr(location, "close"):
+            return lambda: location
+        else:
+            def opener():
+                try:
+                    return argparse.FileType(self.mode)(location)
+                except IOError as error:
+                    raise argparse.ArgumentTypeError(error)
+            return opener
+

@@ -7,3 +7,8 @@ The API
 
 .. autoclass:: App
 
+Argparse Helpers
+================
+
+.. autoclass:: DelayedFileType
+
