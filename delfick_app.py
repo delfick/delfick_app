@@ -24,6 +24,9 @@ class BadOption(DelfickError):
 class CouldntKill(DelfickError):
     desc = "Bad process"
 
+class ArgumentError(DelfickError):
+    desc = "Bad cli argument"
+
 ########################
 ###   APP
 ########################
@@ -496,7 +499,20 @@ class DelayedFileType(object):
                 try:
                     return argparse.FileType(self.mode)(location)
                 except IOError as error:
-                    raise argparse.ArgumentTypeError(error)
+                    error_str = str(error)
+                    suffix = ": '{0}'".format(location)
+                    if error_str.endswith(suffix):
+                        error_str = error_str[:-len(suffix)]
+                    raise ArgumentError("Failed to open the file", error=error_str, location=location)
+                except argparse.ArgumentTypeError as error:
+                    error_str = str(error)
+                    prefix = "can't open '{0}': ".format(location)
+                    suffix = ": '{0}'".format(location)
+                    if error_str.startswith(prefix):
+                        error_str = error_str[len(prefix):]
+                    if error_str.endswith(suffix):
+                        error_str = error_str[:-len(suffix)]
+                    raise ArgumentError("Failed to open the file", error=error_str, location=location)
             return opener
 
 ########################

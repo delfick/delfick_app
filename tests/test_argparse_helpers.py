@@ -1,6 +1,6 @@
 # coding: spec
 
-from delfick_app import DelayedFileType
+from delfick_app import DelayedFileType, ArgumentError
 
 from delfick_error import DelfickErrorTestMixin
 from unittest import TestCase
@@ -44,7 +44,7 @@ describe TestCase, "DelayedFileType":
             filename = tempfile.mkdtemp()
             delayed = DelayedFileType("r")(filename)
 
-            with self.fuzzyAssertRaisesError(argparse.ArgumentTypeError, ".*\[Errno 21\] Is a directory"):
+            with self.fuzzyAssertRaisesError(ArgumentError, "Failed to open the file", error=str(IOError(21, "Is a directory")), location=filename):
                 delayed()
         finally:
             if filename and os.path.exists(filename):
@@ -59,7 +59,7 @@ describe TestCase, "DelayedFileType":
 
             os.chmod(filename, 0x447)
 
-            with self.fuzzyAssertRaisesError(argparse.ArgumentTypeError, ".*\[Errno 13\] Permission denied.+"):
+            with self.fuzzyAssertRaisesError(ArgumentError, "Failed to open the file", error=str(IOError(13, "Permission denied")), location=filename):
                 delayed()
         finally:
             if filename and os.path.exists(filename):
