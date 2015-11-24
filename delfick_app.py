@@ -220,7 +220,7 @@ class App(object):
             cli_parser = self.make_cli_parser()
             try:
                 args, extra_args, cli_args = cli_parser.interpret_args(argv, self.cli_categories)
-                handler = self.setup_logging(args, verbose=args.verbose, silent=args.silent, debug=args.debug)
+                handler = self.setup_logging(args, verbose=args.verbose, silent=args.silent, debug=args.debug, syslog=args.syslog)
                 self.set_boto_useragent()
                 self.execute(args, extra_args, cli_args, handler, **execute_args)
             except KeyboardInterrupt:
@@ -236,18 +236,26 @@ class App(object):
                 raise
             sys.exit(1)
 
-    def setup_logging(self, args, verbose=False, silent=False, debug=False, logging_name=""):
+    def setup_logging(self, args, verbose=False, silent=False, debug=False, logging_name="", syslog=""):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
         log = logging.getLogger(logging_name)
-        handler = RainbowLoggingHandler(self.logging_handler_file)
+        if syslog:
+            handler = logging.handlers.SysLogHandler()
+        else:
+            handler = RainbowLoggingHandler(self.logging_handler_file)
         handler.delfick_app = True
         if any(getattr(h, "delfick_app", False) for h in log.handlers):
             return
 
-        handler._column_color['%(asctime)s'] = ('cyan', None, False)
-        handler._column_color['%(levelname)-7s'] = ('green', None, False)
-        handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
-        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)-7s %(name)-15s %(message)s"))
+        base_format = "%(name)-15s %(message)s"
+        if syslog:
+            handler.setFormatter(logging.Formatter("{0}[{1}]: {2}".format(syslog, os.getpid(), base_format)))
+        else:
+            handler._column_color['%(asctime)s'] = ('cyan', None, False)
+            handler._column_color['%(levelname)-7s'] = ('green', None, False)
+            handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
+            handler.setFormatter(logging.Formatter("{0} {1}".format("%(asctime)s %(levelname)-7s", base_format)))
+
         log.addHandler(handler)
         log.setLevel([logging.INFO, logging.DEBUG][verbose or debug])
         if silent:
@@ -461,6 +469,10 @@ class CliParser(object):
         logging.add_argument("--debug"
             , help = "Debug logs"
             , action = "store_true"
+            )
+
+        logging.add_argument("--syslog"
+            , help = "use syslog and log as the supplied name"
             )
 
         self.specify_other_args(parser, defaults)
