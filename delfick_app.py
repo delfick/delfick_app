@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from rainbow_logging_handler import RainbowLoggingHandler
 from delfick_error import DelfickError, UserQuit
+import logging.handlers
 import subprocess
 import argparse
 import logging
