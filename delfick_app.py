@@ -536,11 +536,20 @@ def read_non_blocking(stream):
     """Read from a non-blocking stream"""
     if stream:
         while True:
-            nxt = ''
-            try:
-                nxt = stream.readline()
-            except IOError:
-                pass
+            nxt = b''
+            empty = 0
+            while not nxt.decode('utf-8').endswith("\n"):
+                try:
+                    read = stream.readline()
+                    if len(read) == 0:
+                        if empty < 3:
+                            time.sleep(0.01)
+                        else:
+                            break
+                        empty += 1
+                    nxt += read
+                except IOError:
+                    pass
 
             if nxt:
                 yield nxt
