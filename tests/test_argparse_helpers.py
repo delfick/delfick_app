@@ -83,8 +83,8 @@ describe TestCase, "DelayedFileType":
                 , type = DelayedFileType('r')
                 )
 
-            args = parser.parse_args(["--config", filename2])
-            self.assertEqual(args.config().read().strip(), content)
+            args_obj = parser.parse_args(["--config", filename2])
+            self.assertEqual(args_obj.config().read().strip(), content)
         finally:
             if filename1 and os.path.exists(filename1):
                 os.remove(filename1)
@@ -113,7 +113,7 @@ describe TestCase, "DelayedFileType":
                 )
 
             with self.fuzzyAssertRaisesError(IOError, ".*\[Errno 2\] No such file or directory.+"):
-                args = parser.parse_args(["--config", filename2])
+                parser.parse_args(["--config", filename2])
         finally:
             if filename1 and os.path.exists(filename1):
                 os.remove(filename1)

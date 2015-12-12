@@ -56,7 +56,7 @@ class App(object):
 
         .. autoattribute:: cli_categories
 
-            self.execute is passed a dictionary cli_args which is from looking at the args object returned by argparse
+            self.execute is passed a dictionary args_dict which is from looking at the args_obj object returned by argparse
 
             This option will break up arguments into hierarchies based on the name of the argument.
 
@@ -66,7 +66,7 @@ class App(object):
 
             and we have arguments for ``[silent, verbose, debug, app_config, app_option1, app_option2]``
 
-            Then cli_args will be ``{"app": {"config": value, "option1": value, "option2": value}, "silent": value, "verbose": value, "debug": value}``
+            Then args_dict will be ``{"app": {"config": value, "option1": value, "option2": value}, "silent": value, "verbose": value, "debug": value}``
 
         .. autoattribute:: cli_description
 
@@ -161,11 +161,11 @@ class App(object):
         app = kls()
         app.mainline(argv, **execute_args)
 
-    def execute(self, args, extra_args, cli_args, logging_handler):
+    def execute(self, args_obj, args_dict, extra_args, logging_handler):
         """Hook for executing the application itself"""
         raise NotImplementedError()
 
-    def setup_other_logging(self, args, verbose=False, silent=False, debug=False):
+    def setup_other_logging(self, args_obj, verbose=False, silent=False, debug=False):
         """
         Hook for setting up any other logging configuration
 
@@ -173,7 +173,7 @@ class App(object):
 
         .. code-block:: python
 
-            def setup_other_logging(self, args, verbose, silent, debug):
+            def setup_other_logging(self, args_obj, verbose, silent, debug):
                 logging.getLogger("boto").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
                 logging.getLogger("requests").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
                 logging.getLogger("paramiko.transport").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
@@ -214,20 +214,20 @@ class App(object):
         * Initialize the logging
         * run self.execute()
         * Catch and display DelfickError
-        * Display traceback if we catch an error and args.debug
+        * Display traceback if we catch an error and args_obj.debug
         """
         cli_parser = None
         try:
             cli_parser = self.make_cli_parser()
             try:
-                args, extra_args, cli_args = cli_parser.interpret_args(argv, self.cli_categories)
-                if args.version:
+                args_obj, args_dict, extra_args = cli_parser.interpret_args(argv, self.cli_categories)
+                if args_obj.version:
                     print(self.VERSION)
                     return
 
-                handler = self.setup_logging(args, verbose=args.verbose, silent=args.silent, debug=args.debug, syslog=args.syslog)
+                handler = self.setup_logging(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog)
                 self.set_boto_useragent()
-                self.execute(args, extra_args, cli_args, handler, **execute_args)
+                self.execute(args_obj, args_dict, extra_args, handler, **execute_args)
             except KeyboardInterrupt:
                 if cli_parser and cli_parser.parse_args(argv)[0].debug:
                     raise
@@ -241,7 +241,7 @@ class App(object):
                 raise
             sys.exit(1)
 
-    def setup_logging(self, args, verbose=False, silent=False, debug=False, logging_name="", syslog=""):
+    def setup_logging(self, args_obj, verbose=False, silent=False, debug=False, logging_name="", syslog=""):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
         log = logging.getLogger(logging_name)
         if syslog:
@@ -266,7 +266,7 @@ class App(object):
         if silent:
             log.setLevel(logging.ERROR)
 
-        self.setup_other_logging(args, verbose, silent, debug)
+        self.setup_other_logging(args_obj, verbose, silent, debug)
         return handler
 
     def setup_logging_theme(self, handler, colors="light"):
@@ -312,31 +312,31 @@ class CliParser(object):
 
     def interpret_args(self, argv, categories=None):
         """
-        Parse argv and return (args, extra, cli_args)
+        Parse argv and return (args_obj, args_dict, extra)
 
-        Where args is the object return by argparse
+        Where args_obj is the object return by argparse
         extra is all the arguments after a --
-        and cli_args is a dictionary representation of the args object
+        and args_dict is a dictionary representation of the args_obj object
         """
         if categories is None:
             categories = []
-        args, extra = self.parse_args(argv)
+        args_obj, extra = self.parse_args(argv)
 
-        cli_args = {}
+        args_dict = {}
         for category in categories:
-            cli_args[category] = {}
-        for key, val in sorted(vars(args).items()):
+            args_dict[category] = {}
+        for key, val in sorted(vars(args_obj).items()):
             found = False
             for category in categories:
                 if key.startswith("{0}_".format(category)):
-                    cli_args[category][key[(len(category)+1):]] = val
+                    args_dict[category][key[(len(category)+1):]] = val
                     found = True
                     break
 
             if not found:
-                cli_args[key] = val
+                args_dict[key] = val
 
-        return args, extra, cli_args
+        return args_obj, args_dict, extra
 
     def parse_args(self, argv=None):
         """
@@ -507,8 +507,8 @@ class DelayedFileType(object):
             , type = delfick_app.DelayedFileType('r')
             )
 
-        args = parser.parse_args(["--config", "./fileThatExists.yml"])
-        config = args.config()
+        args_obj = parser.parse_args(["--config", "./fileThatExists.yml"])
+        config = args_obj.config()
     """
     def __init__(self, mode):
         self.mode = mode
@@ -557,8 +557,14 @@ def read_non_blocking(stream):
                             break
                         empty += 1
                     nxt += read
-                except IOError:
-                    pass
+                except IOError as error:
+                    if error.errno == 35:
+                        # Resource temporarily unavailable
+                        if empty < 3:
+                            time.sleep(0.01)
+                        else:
+                            break
+                        empty += 1
 
             if nxt:
                 yield nxt

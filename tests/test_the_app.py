@@ -46,7 +46,7 @@ describe TestCase, "App":
         it "catches DelfickError errors and prints them nicely":
             fle = StringIO()
             class MyApp(App):
-                def execute(slf, args, extra_args, cli_args, handler):
+                def execute(slf, args_obj, args_dict, extra_args, handler):
                     raise DelfickError("Well this should work", blah=1, _errors=[DelfickError("SubError", meh=2), DelfickError("SubError2", stuff=3)])
 
             try:
@@ -73,7 +73,7 @@ describe TestCase, "App":
         it "Converts KeyboardInterrupt into a UserQuit":
             fle = StringIO()
             class MyApp(App):
-                def execute(slf, args, extra_args, cli_args, handler):
+                def execute(slf, args_obj, args_dict, extra_args, handler):
                     raise KeyboardInterrupt()
 
             try:
@@ -93,7 +93,7 @@ describe TestCase, "App":
         it "Does not catch non DelfickError exceptions":
             error = ValueError("hi")
             class MyApp(App):
-                def execute(slf, args, extra_args, cli_args, handler):
+                def execute(slf, args_obj, args_dict, extra_args, handler):
                     raise error
 
             with self.fuzzyAssertRaisesError(ValueError):
@@ -101,7 +101,7 @@ describe TestCase, "App":
 
         it "raises DelfickError exceptions if we have --debug":
             class MyApp(App):
-                def execute(slf, args, extra_args, cli_args, handler):
+                def execute(slf, args_obj, args_dict, extra_args, handler):
                     raise DelfickError("hi there", meh=2)
 
             with self.fuzzyAssertRaisesError(DelfickError, "hi there", meh=2):
@@ -110,7 +110,7 @@ describe TestCase, "App":
         it "raises the KeyboardInterrupt if we have --debug":
             error = ValueError("hi")
             class MyApp(App):
-                def execute(slf, args, extra_args, cli_args, handler):
+                def execute(slf, args_obj, args_dict, extra_args, handler):
                     raise KeyboardInterrupt()
 
             with self.fuzzyAssertRaisesError(KeyboardInterrupt):
@@ -122,16 +122,16 @@ describe TestCase, "App":
             cli_parser = mock.Mock(name="cli_parser")
             argv = mock.Mock(name="argv")
             cli_categories = mock.Mock(name="cli_categories")
-            args = mock.Mock(name="args", version=False)
+            args_obj = mock.Mock(name="args_obj", version=False)
             extra_args = mock.Mock(name="extra_args")
-            cli_args = mock.Mock(name="cli_args")
+            args_dict = mock.Mock(name="args_dict")
             handler = mock.Mock(name="handler")
             syslog = mock.Mock(name="syslog")
 
             cli_parser.interpret_args = mock.Mock(name="interpret_args")
             def interpret_args(*a):
                 called.append(1)
-                return (args, extra_args, cli_args)
+                return (args_obj, args_dict, extra_args)
             cli_parser.interpret_args.side_effect = interpret_args
 
             setup_logging = mock.Mock(name="setup_logging")
@@ -155,8 +155,8 @@ describe TestCase, "App":
                 app.mainline(argv)
 
             cli_parser.interpret_args.assert_called_once_with(argv, cli_categories)
-            setup_logging.assert_called_once_with(args, verbose=args.verbose, silent=args.silent, debug=args.debug, syslog=args.syslog)
-            execute.assert_called_once_with(args, extra_args, cli_args, handler)
+            setup_logging.assert_called_once_with(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog)
+            execute.assert_called_once_with(args_obj, args_dict, extra_args, handler)
 
     describe "setup_logging":
         it "works":
@@ -165,8 +165,8 @@ describe TestCase, "App":
                 logging_handler_file = fle
 
             app = MyApp()
-            args, _, _ = app.make_cli_parser().interpret_args([])
-            logging_handler = app.setup_logging(args, logging_name="blah")
+            args_obj, _, _ = app.make_cli_parser().interpret_args([])
+            logging_handler = app.setup_logging(args_obj, logging_name="blah")
 
             log = logging.getLogger("blah")
             log.propagate = False
@@ -177,13 +177,13 @@ describe TestCase, "App":
             log.warning("yeap")
 
             log.removeHandler(logging_handler)
-            args, _, _ = app.make_cli_parser().interpret_args(['--verbose'])
-            logging_handler = app.setup_logging(args, verbose=args.verbose, logging_name="blah")
+            args_obj, _, _ = app.make_cli_parser().interpret_args(['--verbose'])
+            logging_handler = app.setup_logging(args_obj, verbose=args_obj.verbose, logging_name="blah")
             log.debug("this one is captured")
 
             log.removeHandler(logging_handler)
-            args, _, _ = app.make_cli_parser().interpret_args(['--silent'])
-            logging_handler = app.setup_logging(args, silent=args.silent, logging_name="blah")
+            args_obj, _, _ = app.make_cli_parser().interpret_args(['--silent'])
+            logging_handler = app.setup_logging(args_obj, silent=args_obj.silent, logging_name="blah")
             log.debug("not captured")
             log.warning("not captured")
             log.info("not captured")

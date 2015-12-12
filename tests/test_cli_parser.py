@@ -49,7 +49,7 @@ describe TestCase, "CliParser":
     describe "parse_args":
         it "splits, makes, parses and checks the args":
             argv = mock.Mock(name="argv")
-            args = mock.Mock(name="args")
+            args_obj = mock.Mock(name="args_obj")
             other_args = mock.Mock(name="other_args")
             defaults = mock.Mock(name="defaults")
             positional_replacements = mock.Mock(name="positional_replacements")
@@ -58,7 +58,7 @@ describe TestCase, "CliParser":
             parsed = mock.Mock(name='parsed')
             parser.parse_args.return_value = parsed
 
-            split_args = mock.Mock(name="split_args", return_value=(args, other_args, defaults))
+            split_args = mock.Mock(name="split_args", return_value=(args_obj, other_args, defaults))
             make_parser = mock.Mock(name="make_parser", return_value=parser)
             check_args = mock.Mock(name="check_args")
 
@@ -67,7 +67,7 @@ describe TestCase, "CliParser":
                 self.assertEqual(cli_parser.parse_args(argv), (parsed, other_args))
 
             make_parser.assert_called_once_with(defaults)
-            parser.parse_args.assert_called_once_with(args)
+            parser.parse_args.assert_called_once_with(args_obj)
             check_args.assert_called_once_with(argv, defaults, positional_replacements)
 
         it "works":
@@ -134,16 +134,16 @@ describe TestCase, "CliParser":
                     parser.add_argument('--other')
 
             parser = Parser("")
-            args, extra, cli_args = parser.interpret_args(["--one", "1", "--two", "2", "--other", "3", "--syslog", "my-app"], ["my_app"])
+            args_obj, args_dict, extra = parser.interpret_args(["--one", "1", "--two", "2", "--other", "3", "--syslog", "my-app"], ["my_app"])
 
             self.assertEqual(extra, "")
 
-            self.assertEqual(args.my_app_one, "1")
-            self.assertEqual(args.my_app_two, "2")
-            self.assertEqual(args.other, "3")
-            self.assertEqual(args.syslog, "my-app")
+            self.assertEqual(args_obj.my_app_one, "1")
+            self.assertEqual(args_obj.my_app_two, "2")
+            self.assertEqual(args_obj.other, "3")
+            self.assertEqual(args_obj.syslog, "my-app")
 
-            self.assertEqual(cli_args, {"my_app": {"one": "1", "two": "2"}, "other": "3", "silent": False, "debug": False, "verbose": False, "syslog": "my-app"})
+            self.assertEqual(args_dict, {"my_app": {"one": "1", "two": "2"}, "other": "3", "silent": False, "debug": False, "verbose": False, "version": False, "syslog": "my-app"})
 
         it "Doesn't complain about flagged values in positional placement":
             class Parser(CliParser):
@@ -159,7 +159,7 @@ describe TestCase, "CliParser":
                         )
 
             parser = Parser("", ["--one", "--two", ("--three", 'dflt')], {})
-            parsed, extra, cli_args = parser.interpret_args(['whatever', '--three', 'whatever2', '--two', 'stuff'])
+            parsed, args_dict, extra = parser.interpret_args(['whatever', '--three', 'whatever2', '--two', 'stuff'])
             self.assertEqual(parsed.one, "whatever")
             self.assertEqual(parsed.two, "stuff")
             self.assertEqual(parsed.three, "whatever2")
@@ -179,7 +179,7 @@ describe TestCase, "CliParser":
 
             parser = Parser("", ["--one", "--two", ("--three", 'dflt')], {})
             with self.fuzzyAssertRaisesError(BadOption, "Please don't specify an option as a positional argument and as a --flag", argument="--two", position=2):
-                parsed, extra, cli_args = parser.interpret_args(['whatever', 'trees', 'whatever2', '--two', 'stuff'])
+                parser.interpret_args(['whatever', 'trees', 'whatever2', '--two', 'stuff'])
 
     describe "make_defaults":
         it "has no defaults if there are no positional_replacements or environment_defaults":
@@ -352,25 +352,25 @@ describe TestCase, "CliParser":
         it "specifies verbose, silent and debug":
             parser = CliParser("").make_parser({})
 
-            args = parser.parse_args([])
-            self.assertIs(args.verbose, False)
-            self.assertIs(args.silent, False)
-            self.assertIs(args.debug, False)
+            args_obj = parser.parse_args([])
+            self.assertIs(args_obj.verbose, False)
+            self.assertIs(args_obj.silent, False)
+            self.assertIs(args_obj.debug, False)
 
-            args = parser.parse_args(["--verbose"])
-            self.assertIs(args.verbose, True)
-            self.assertIs(args.silent, False)
-            self.assertIs(args.debug, False)
+            args_obj = parser.parse_args(["--verbose"])
+            self.assertIs(args_obj.verbose, True)
+            self.assertIs(args_obj.silent, False)
+            self.assertIs(args_obj.debug, False)
 
-            args = parser.parse_args(["--silent"])
-            self.assertIs(args.verbose, False)
-            self.assertIs(args.silent, True)
-            self.assertIs(args.debug, False)
+            args_obj = parser.parse_args(["--silent"])
+            self.assertIs(args_obj.verbose, False)
+            self.assertIs(args_obj.silent, True)
+            self.assertIs(args_obj.debug, False)
 
-            args = parser.parse_args(["--debug"])
-            self.assertIs(args.verbose, False)
-            self.assertIs(args.silent, False)
-            self.assertIs(args.debug, True)
+            args_obj = parser.parse_args(["--debug"])
+            self.assertIs(args_obj.verbose, False)
+            self.assertIs(args_obj.silent, False)
+            self.assertIs(args_obj.debug, True)
 
         it "complains if silent, verbose and debug are specified at the same time":
             called = []
