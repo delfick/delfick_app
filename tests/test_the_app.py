@@ -122,7 +122,7 @@ describe TestCase, "App":
             cli_parser = mock.Mock(name="cli_parser")
             argv = mock.Mock(name="argv")
             cli_categories = mock.Mock(name="cli_categories")
-            args = mock.Mock(name="args")
+            args = mock.Mock(name="args", version=False)
             extra_args = mock.Mock(name="extra_args")
             cli_args = mock.Mock(name="cli_args")
             handler = mock.Mock(name="handler")
