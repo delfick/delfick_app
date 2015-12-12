@@ -221,6 +221,10 @@ class App(object):
             cli_parser = self.make_cli_parser()
             try:
                 args, extra_args, cli_args = cli_parser.interpret_args(argv, self.cli_categories)
+                if args.version:
+                    print(self.VERSION)
+                    return
+
                 handler = self.setup_logging(args, verbose=args.verbose, silent=args.silent, debug=args.debug, syslog=args.syslog)
                 self.set_boto_useragent()
                 self.execute(args, extra_args, cli_args, handler, **execute_args)
@@ -474,6 +478,11 @@ class CliParser(object):
 
         logging.add_argument("--syslog"
             , help = "use syslog and log as the supplied name"
+            )
+
+        parser.add_argument("--version"
+            , help = "Print out the version!"
+            , action = "store_true"
             )
 
         self.specify_other_args(parser, defaults)
