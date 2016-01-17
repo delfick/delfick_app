@@ -11,5 +11,5 @@ install:
   - pip install -e '.[tests]' --use-mirrors --download-cache $HOME/.pip-cache/
 
 script:
-  - ./test.sh
+  - ./test.sh --verbose
 
