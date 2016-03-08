@@ -114,6 +114,12 @@ class App(object):
 
                 But if it's not specified, then ``defaults['--task'] == {"default": "list_tasks"}``
 
+        .. autoattribute:: issue_tracker_link
+
+            A link to where users can go to post issues
+
+            It is used when we get an unexpected exception.
+
     ``Hooks``
 
         .. automethod:: execute
@@ -128,6 +134,7 @@ class App(object):
     ########################
 
     VERSION = Ignore
+    issue_tracker_link = None
     boto_useragent_name = Ignore
 
     CliParserKls = property(lambda s: CliParser)
@@ -241,7 +248,7 @@ class App(object):
                 raise
             sys.exit(1)
         except Exception:
-            msg = "Something unexpected happened!! Please file a ticket in github!"
+            msg = "Something unexpected happened!! Please file a ticket in the issue tracker! {0}".format(self.issue_tracker_link)
             print("\n\n{0}\n{1}\n".format(msg, '=' * len(msg)))
             raise
 
