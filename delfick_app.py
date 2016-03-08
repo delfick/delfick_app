@@ -240,6 +240,10 @@ class App(object):
             if cli_parser and cli_parser.parse_args(argv)[0].debug:
                 raise
             sys.exit(1)
+        except Exception:
+            msg = "Something unexpected happened!! Please file a ticket in github!"
+            print("\n\n{0}\n{1}\n".format(msg, '=' * len(msg)))
+            raise
 
     def setup_logging(self, args_obj, verbose=False, silent=False, debug=False, logging_name="", syslog=""):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
