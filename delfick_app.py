@@ -569,13 +569,15 @@ def read_non_blocking(stream):
                         empty += 1
                     nxt += read
                 except IOError as error:
-                    if error.errno == 35:
+                    if error.errno in (11, 35):
                         # Resource temporarily unavailable
                         if empty < 3:
                             time.sleep(0.01)
                         else:
                             break
                         empty += 1
+                    else:
+                        raise
 
             if nxt:
                 yield nxt
