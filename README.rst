@@ -19,7 +19,7 @@ The most basic example of usage would look something like:
             print "hello world"
 
     class Main(App):
-        def execute(self, args, extra_args, cli_args, logging_handler):
+        def execute(self, args_obj, args_dict, extra_args, logging_handler):
             """Start your app!"""
             MyApp().start(cli_args)
 
@@ -60,7 +60,7 @@ Advanced Usage
         cli_environment_defaults = {"CONFIG_LOCATION": ("--config", './config.yml')}
         cli_positional_replacements = [('--task', 'list_tasks'), '--environment']
 
-        def execute(self, args, extra_args, cli_args, logging_handler):
+        def execute(self, args_obj, args_dict, extra_args, logging_handler):
             # Optionally set the logging theme between 'light' and 'dark'
             self.setup_logging_theme(logging_handler, colors="dark")
 
