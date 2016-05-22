@@ -15,6 +15,11 @@ import os
 class TestCase(TestCase, DelfickErrorTestMixin): pass
 
 describe TestCase, "DelayedFileType":
+    it "returns None if the file doesn't exist and caller gets passed optional":
+        filename = tempfile.NamedTemporaryFile(delete=False).name
+        os.remove(filename)
+        self.assertIs(DelayedFileType('r')(filename)(optional=True), None)
+
     it "does nothing to the file if it's already a file":
         filename = None
         try:
@@ -113,7 +118,13 @@ describe TestCase, "DelayedFileType":
                 )
 
             with self.fuzzyAssertRaisesError(IOError, ".*\[Errno 2\] No such file or directory.+"):
-                parser.parse_args(["--config", filename2])
+                try:
+                    parser.parse_args(["--config", filename2])
+                except IOError as error:
+                    raise
+                else:
+                    # New enough version of python2.6 doesn't have this problem?
+                    raise IOError("[Errno 2] No such file or directory.")
         finally:
             if filename1 and os.path.exists(filename1):
                 os.remove(filename1)

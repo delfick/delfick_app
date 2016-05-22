@@ -528,7 +528,10 @@ class DelayedFileType(object):
         if hasattr(location, "read") and hasattr(location, "close"):
             return lambda: location
         else:
-            def opener():
+            def opener(optional=False):
+                if optional and not os.path.exists(location):
+                    return None
+
                 try:
                     return argparse.FileType(self.mode)(location)
                 except IOError as error:
