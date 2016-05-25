@@ -232,7 +232,7 @@ class App(object):
                     print(self.VERSION)
                     return
 
-                handler = self.setup_logging(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog)
+                handler = self.setup_logging(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog, syslog_address=args_obj.syslog_address)
                 self.set_boto_useragent()
                 self.execute(args_obj, args_dict, extra_args, handler, **execute_args)
             except KeyboardInterrupt:
@@ -252,11 +252,14 @@ class App(object):
             print("\n\n{0}\n{1}\n".format(msg, '=' * len(msg)))
             raise
 
-    def setup_logging(self, args_obj, verbose=False, silent=False, debug=False, logging_name="", syslog=""):
+    def setup_logging(self, args_obj, verbose=False, silent=False, debug=False, logging_name="", syslog="", syslog_address=""):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
         log = logging.getLogger(logging_name)
         if syslog:
-            handler = logging.handlers.SysLogHandler()
+            opts = {}
+            if syslog_address:
+                opts = {"address": syslog_address}
+            handler = logging.handlers.SysLogHandler(**opts)
         else:
             handler = RainbowLoggingHandler(self.logging_handler_file)
         handler.delfick_app = True
@@ -489,6 +492,11 @@ class CliParser(object):
 
         logging.add_argument("--syslog"
             , help = "use syslog and log as the supplied name"
+            )
+
+        parser.add_argument("--syslog-address"
+            , help = "The address to use for syslog (i.e. /dev/log)"
+            , default = ""
             )
 
         parser.add_argument("--version"

@@ -134,7 +134,7 @@ describe TestCase, "CliParser":
                     parser.add_argument('--other')
 
             parser = Parser("")
-            args_obj, args_dict, extra = parser.interpret_args(["--one", "1", "--two", "2", "--other", "3", "--syslog", "my-app"], ["my_app"])
+            args_obj, args_dict, extra = parser.interpret_args(["--one", "1", "--two", "2", "--other", "3", "--syslog", "my-app", "--syslog-address", "/dev/log"], ["my_app"])
 
             self.assertEqual(extra, "")
 
@@ -143,7 +143,7 @@ describe TestCase, "CliParser":
             self.assertEqual(args_obj.other, "3")
             self.assertEqual(args_obj.syslog, "my-app")
 
-            self.assertEqual(args_dict, {"my_app": {"one": "1", "two": "2"}, "other": "3", "silent": False, "debug": False, "verbose": False, "version": False, "syslog": "my-app"})
+            self.assertEqual(args_dict, {"my_app": {"one": "1", "two": "2"}, "other": "3", "silent": False, "debug": False, "verbose": False, "version": False, "syslog": "my-app", "syslog_address": "/dev/log"})
 
         it "Doesn't complain about flagged values in positional placement":
             class Parser(CliParser):

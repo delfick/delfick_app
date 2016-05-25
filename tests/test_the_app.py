@@ -127,6 +127,7 @@ describe TestCase, "App":
             args_dict = mock.Mock(name="args_dict")
             handler = mock.Mock(name="handler")
             syslog = mock.Mock(name="syslog")
+            syslog_address = mock.Mock(name="syslog_address")
 
             cli_parser.interpret_args = mock.Mock(name="interpret_args")
             def interpret_args(*a):
@@ -155,7 +156,7 @@ describe TestCase, "App":
                 app.mainline(argv)
 
             cli_parser.interpret_args.assert_called_once_with(argv, cli_categories)
-            setup_logging.assert_called_once_with(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog)
+            setup_logging.assert_called_once_with(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog, syslog_address=args_obj.syslog_address)
             execute.assert_called_once_with(args_obj, args_dict, extra_args, handler)
 
     describe "setup_logging":
