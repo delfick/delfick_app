@@ -127,6 +127,8 @@ class App(object):
         .. automethod:: setup_other_logging
 
         .. automethod:: specify_other_args
+
+        .. automethod:: exception_handler
     """
 
     ########################
@@ -224,6 +226,7 @@ class App(object):
         * Display traceback if we catch an error and args_obj.debug
         """
         cli_parser = None
+        args_obj, args_dict, extra_args = None, None, None
         try:
             cli_parser = self.make_cli_parser()
             try:
@@ -239,6 +242,9 @@ class App(object):
                 if cli_parser and cli_parser.parse_args(argv)[0].debug:
                     raise
                 raise UserQuit()
+            except:
+                self.exception_handler(sys.exc_info(), args_obj, args_dict, extra_args)
+                raise
         except DelfickError as error:
             print("", file=print_errors_to)
             print("!" * 80, file=print_errors_to)
@@ -251,6 +257,9 @@ class App(object):
             msg = "Something unexpected happened!! Please file a ticket in the issue tracker! {0}".format(self.issue_tracker_link)
             print("\n\n{0}\n{1}\n".format(msg, '=' * len(msg)))
             raise
+
+    def exception_handler(self, exc_info, args_obj, args_dict, extra_args):
+        """Handler for doing things like bugsnag"""
 
     def setup_logging(self, args_obj, verbose=False, silent=False, debug=False, logging_name="", syslog="", syslog_address=""):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
