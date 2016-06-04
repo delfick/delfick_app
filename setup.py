@@ -7,7 +7,7 @@ setup(
 
     , install_requires =
       [ 'argparse'
-      , 'delfick_error==1.7.2'
+      , 'delfick_error==1.7.3'
       , 'rainbow_logging_handler==2.2.2'
       ]
 
