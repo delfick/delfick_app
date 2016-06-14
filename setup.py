@@ -2,12 +2,12 @@ from setuptools import setup
 
 setup(
       name = "delfick_app"
-    , version = "0.7.8"
+    , version = "0.7.9"
     , py_modules = ['delfick_app']
 
     , install_requires =
       [ 'argparse'
-      , 'delfick_error==1.7.3'
+      , 'delfick_error==1.7.4'
       , 'rainbow_logging_handler==2.2.2'
       ]
 
