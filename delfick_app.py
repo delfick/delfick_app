@@ -489,9 +489,13 @@ class CliParser(object):
             , action = "store_true"
             )
 
+        if "default" in defaults.get("--silent", {}):
+            kwargs = defaults["--silent"]
+        else:
+            kwargs = {"action": "store_true"}
         logging.add_argument("--silent"
             , help = "Only log errors"
-            , action = "store_true"
+            , **kwargs
             )
 
         logging.add_argument("--debug"
