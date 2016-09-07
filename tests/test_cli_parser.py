@@ -334,7 +334,7 @@ describe TestCase, "CliParser":
     describe "make_parser":
         it "calls specify_other_args with the parser":
             parser = mock.Mock(name="parser")
-            defaults = mock.Mock(name="defaults")
+            defaults = {"--silent": {"default": False}}
             description = mock.Mock(name="description")
             FakeArgumentParser = mock.Mock(name="ArgumentParser", return_value=parser)
 
