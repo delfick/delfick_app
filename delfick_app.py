@@ -261,7 +261,7 @@ class App(object):
     def exception_handler(self, exc_info, args_obj, args_dict, extra_args):
         """Handler for doing things like bugsnag"""
 
-    def setup_logging(self, args_obj, log=None, verbose=False, silent=False, debug=False, logging_name="", syslog="", syslog_address="", structlog=False):
+    def setup_logging(self, args_obj, log=None, verbose=False, silent=False, debug=False, logging_name="", syslog="", syslog_address="", only_message=False):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
         log = log if log is not None else logging.getLogger(logging_name)
         if syslog:
@@ -276,7 +276,7 @@ class App(object):
             return
 
         base_format = "%(name)-15s %(message)s"
-        if structlog:
+        if only_message:
             base_format = "%(message)s"
 
         if syslog:
@@ -285,7 +285,7 @@ class App(object):
             handler._column_color['%(asctime)s'] = ('cyan', None, False)
             handler._column_color['%(levelname)-7s'] = ('green', None, False)
             handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
-            if structlog:
+            if only_message:
                 handler.setFormatter(logging.Formatter(base_format))
             else:
                 handler.setFormatter(logging.Formatter("{0} {1}".format("%(asctime)s %(levelname)-7s", base_format)))
