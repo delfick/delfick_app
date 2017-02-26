@@ -261,9 +261,9 @@ class App(object):
     def exception_handler(self, exc_info, args_obj, args_dict, extra_args):
         """Handler for doing things like bugsnag"""
 
-    def setup_logging(self, args_obj, verbose=False, silent=False, debug=False, logging_name="", syslog="", syslog_address="", structlog=False):
+    def setup_logging(self, args_obj, log=None, verbose=False, silent=False, debug=False, logging_name="", syslog="", syslog_address="", structlog=False):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
-        log = logging.getLogger(logging_name)
+        log = log if log is not None else logging.getLogger(logging_name)
         if syslog:
             opts = {}
             if syslog_address:
