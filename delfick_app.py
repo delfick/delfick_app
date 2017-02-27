@@ -40,7 +40,8 @@ class App(object):
 
         .. autoattribute:: VERSION
 
-            The version of your application, best way is to define this somewhere and import it into your mainline and setup.py from that location
+            The version of your application, best way is to define this somewhere
+            and import it into your mainline and setup.py from that location
 
         .. autoattribute:: CliParserKls
 
@@ -52,21 +53,31 @@ class App(object):
 
         .. autoattribute:: boto_useragent_name
 
-            The name to append to your boto useragent if that's a thing you want to happen
+            The name to append to your boto useragent if that's a thing you want
+            to happen
 
         .. autoattribute:: cli_categories
 
-            self.execute is passed a dictionary args_dict which is from looking at the args_obj object returned by argparse
+            self.execute is passed a dictionary args_dict which is from looking
+            at the args_obj object returned by argparse
 
-            This option will break up arguments into hierarchies based on the name of the argument.
+            This option will break up arguments into hierarchies based on the
+            name of the argument.
 
             For example:
 
             ``cli_categories = ['app']``
 
-            and we have arguments for ``[silent, verbose, debug, app_config, app_option1, app_option2]``
+            and we have arguments for
+            ``[silent, verbose, debug, app_config, app_option1, app_option2]``
 
-            Then args_dict will be ``{"app": {"config": value, "option1": value, "option2": value}, "silent": value, "verbose": value, "debug": value}``
+            Then args_dict will be:
+
+            .. code-block:: json
+
+                { "app": {"config": value, "option1": value, "option2": value}
+                , "silent": value, "verbose": value, "debug": value
+                }
 
         .. autoattribute:: cli_description
 
@@ -84,7 +95,8 @@ class App(object):
 
             For example, ``{"APP_CONFIG": ("--config", "./config.yml")}``
 
-            Which means ``defaults["--config"] == {'default': "./config.yml"}`` if APP_CONFIG isn't in the environment.
+            Which means ``defaults["--config"] == {'default': "./config.yml"}``
+            if APP_CONFIG isn't in the environment.
 
         .. autoattribute:: cli_positional_replacements
 
@@ -93,7 +105,9 @@ class App(object):
             For example:
 
             ``cli_positional_replacements = ['--environment', '--stack']``
-                Will mean the first positional argument becomes the value for --environment and the second positional becomes the value for '--stack'
+                Will mean the first positional argument becomes the value for
+                --environment and the second positional becomes the value for
+                '--stack'
 
                 Note for this to work, you must do something like:
 
@@ -105,14 +119,17 @@ class App(object):
                             , **defaults['--environment']
                             )
 
-            Items in positional_replacements may also be a tuple of ``(replacement, default)``
+            Items in positional_replacements may also be a tuple of
+            ``(replacement, default)``
 
             For example:
 
             ``cli_positional_replacements = [('--task', 'list_tasks')]``
-                will mean the first positional argument becomes the value for --task
+                will mean the first positional argument becomes the value for
+                --task
 
-                But if it's not specified, then ``defaults['--task'] == {"default": "list_tasks"}``
+                But if it's not specified, then
+                ``defaults['--task'] == {"default": "list_tasks"}``
 
         .. autoattribute:: issue_tracker_link
 
@@ -358,7 +375,7 @@ class CliParser(object):
             found = False
             for category in categories:
                 if key.startswith("{0}_".format(category)):
-                    args_dict[category][key[(len(category)+1):]] = val
+                    args_dict[category][key[(len(category) + 1):]] = val
                     found = True
                     break
 
@@ -397,7 +414,7 @@ class CliParser(object):
             if type(replacement) is tuple:
                 replacement, _ = replacement
             if index < num_positionals and "default" in defaults.get(replacement, {}) and replacement in args:
-                raise BadOption("Please don't specify an option as a positional argument and as a --flag", argument=replacement, position=index+1)
+                raise BadOption("Please don't specify an option as a positional argument and as a --flag", argument=replacement, position=index + 1)
 
     def split_args(self, argv):
         """
@@ -667,7 +684,8 @@ def command_output(command, *command_extras, **kwargs):
             break
         for nxt in read_non_blocking(process.stdout):
             output.append(nxt.decode("utf8").strip())
-            if verbose: print(output[-1])
+            if verbose:
+                print(output[-1])
         time.sleep(0.01)
 
     attempted_sigkill = False
@@ -683,7 +701,8 @@ def command_output(command, *command_extras, **kwargs):
                 break
             for nxt in read_non_blocking(process.stdout):
                 output.append(nxt.decode("utf8").strip())
-                if verbose: print(output[-1])
+                if verbose:
+                    print(output[-1])
             time.sleep(0.01)
 
         if process.poll() is None:
@@ -693,7 +712,8 @@ def command_output(command, *command_extras, **kwargs):
 
     for nxt in read_non_blocking(process.stdout):
         output.append(nxt.decode("utf8").strip())
-        if verbose: print(output[-1])
+        if verbose:
+            print(output[-1])
 
     if attempted_sigkill:
         time.sleep(0.01)
@@ -710,4 +730,3 @@ def command_output(command, *command_extras, **kwargs):
             print(nxt_out)
 
     return output, process.poll()
-
