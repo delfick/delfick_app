@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from rainbow_logging_handler import RainbowLoggingHandler
+from delfick_logging import setup_logging, setup_logging_theme
 from delfick_error import DelfickError, UserQuit
 import logging.handlers
 import subprocess
@@ -252,7 +252,10 @@ class App(object):
                     print(self.VERSION)
                     return
 
-                handler = self.setup_logging(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog, syslog_address=args_obj.syslog_address)
+                handler = self.setup_logging(args_obj
+                    , verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug
+                    , syslog=args_obj.syslog, syslog_address=args_obj.syslog_address
+                    )
                 self.set_boto_useragent()
                 self.execute(args_obj, args_dict, extra_args, handler, **execute_args)
             except KeyboardInterrupt:
@@ -278,64 +281,32 @@ class App(object):
     def exception_handler(self, exc_info, args_obj, args_dict, extra_args):
         """Handler for doing things like bugsnag"""
 
-    def setup_logging(self, args_obj, log=None, verbose=False, silent=False, debug=False, logging_name="", syslog="", syslog_address="", only_message=False):
+    def setup_logging(self, args_obj, log=None, verbose=False, silent=False, debug=False, syslog="", syslog_address="", only_message=False):
         """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
-        log = log if log is not None else logging.getLogger(logging_name)
-        if syslog:
-            opts = {}
-            if syslog_address:
-                opts = {"address": syslog_address}
-            handler = logging.handlers.SysLogHandler(**opts)
-        else:
-            handler = RainbowLoggingHandler(self.logging_handler_file)
-        handler.delfick_app = True
-        if any(getattr(h, "delfick_app", False) for h in log.handlers):
-            return
-
-        base_format = "%(name)-15s %(message)s"
-        if only_message:
-            base_format = "%(message)s"
-
-        if syslog:
-            handler.setFormatter(logging.Formatter("{0}[{1}]: {2}".format(syslog, os.getpid(), base_format)))
-        else:
-            handler._column_color['%(asctime)s'] = ('cyan', None, False)
-            handler._column_color['%(levelname)-7s'] = ('green', None, False)
-            handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
-            if only_message:
-                handler.setFormatter(logging.Formatter(base_format))
-            else:
-                handler.setFormatter(logging.Formatter("{0} {1}".format("%(asctime)s %(levelname)-7s", base_format)))
-
-        log.addHandler(handler)
-        log.setLevel([logging.INFO, logging.DEBUG][verbose or debug])
+        level = [logging.INFO, logging.DEBUG][verbose or debug]
         if silent:
-            log.setLevel(logging.ERROR)
+            level = logging.ERROR
+
+        handler = setup_logging(
+              log=log
+            , level=level
+            , syslog=args_obj.syslog, syslog_address=args_obj.syslog_address
+            , only_message=only_message
+            , logging_handler_file=self.logging_handler_file
+            )
 
         self.setup_other_logging(args_obj, verbose, silent, debug)
         return handler
 
     def setup_logging_theme(self, handler, colors="light"):
-        """
-        Setup a logging theme
-
-        Currently there is only ``light`` and ``dark`` which consists of a difference
-        in color for INFO level messages.
-        """
-        if colors not in ("light", "dark"):
-            log.warning("Told to set colors to a theme we don't have\tgot=%s\thave=[light, dark]", colors)
-            return
-
-        # Haven't put much effort into actually working out more than just the message colour
-        if colors == "light":
-            handler._column_color['%(message)s'][logging.INFO] = ('cyan', None, False)
-        else:
-            handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
+        """Setup a logging theme"""
+        return setup_logging_theme(handler, colors=colors)
 
     def make_cli_parser(self):
         """Return a CliParser instance"""
         properties = {"specify_other_args": self.specify_other_args}
-        return type("CliParser", (self.CliParserKls, ), properties)(self.cli_description, self.cli_positional_replacements, self.cli_environment_defaults)
+        kls = type("CliParser", (self.CliParserKls, ), properties)
+        return kls(self.cli_description, self.cli_positional_replacements, self.cli_environment_defaults)
 
 ########################
 ###   CliParser
