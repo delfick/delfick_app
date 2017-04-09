@@ -8,7 +8,7 @@ setup(
     , install_requires =
       [ 'argparse'
       , 'delfick_error==1.7.8'
-      , 'delfick_logging==0.2.2'
+      , 'delfick_logging==0.2.3'
       ]
 
     , extras_require =
