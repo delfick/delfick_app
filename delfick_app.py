@@ -251,10 +251,7 @@ class App(object):
                     print(self.VERSION)
                     return
 
-                handler = self.setup_logging(args_obj
-                    , verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug
-                    , syslog=args_obj.syslog, syslog_address=args_obj.syslog_address
-                    )
+                handler = self.setup_logging(args_obj)
                 self.set_boto_useragent()
                 self.execute(args_obj, args_dict, extra_args, handler, **execute_args)
             except KeyboardInterrupt:
@@ -280,21 +277,24 @@ class App(object):
     def exception_handler(self, exc_info, args_obj, args_dict, extra_args):
         """Handler for doing things like bugsnag"""
 
-    def setup_logging(self, args_obj, log=None, verbose=False, silent=False, debug=False, syslog="", syslog_address="", only_message=False):
-        """Setup the RainbowLoggingHandler for the logs and call setup_other_logging"""
-        level = [logging.INFO, logging.DEBUG][verbose or debug]
-        if silent:
+    def setup_logging(self, args_obj, log=None, only_message=False):
+        """Setup the handler for the logs and call setup_other_logging"""
+        level = [logging.INFO, logging.DEBUG][args_obj.verbose or args_obj.debug]
+        if args_obj.silent:
             level = logging.ERROR
 
         handler = setup_logging(
-              log=log
-            , level=level
-            , syslog=args_obj.syslog, syslog_address=args_obj.syslog_address
-            , only_message=only_message
-            , logging_handler_file=self.logging_handler_file
+              log = log
+            , level = level
+            , program = args_obj.logging_program
+            , syslog_address = args_obj.syslog_address
+            , udp_address = args_obj.udp_logging_address
+            , tcp_address = args_obj.tcp_logging_address
+            , only_message = only_message
+            , logging_handler_file = self.logging_handler_file
             )
 
-        self.setup_other_logging(args_obj, verbose, silent, debug)
+        self.setup_other_logging(args_obj, args_obj.verbose, args_obj.silent, args_obj.debug)
         return handler
 
     def setup_logging_theme(self, handler, colors="light"):
@@ -496,8 +496,18 @@ class CliParser(object):
             , action = "store_true"
             )
 
-        logging.add_argument("--syslog"
-            , help = "use syslog and log as the supplied name"
+        logging.add_argument("--logging-program"
+            , help = "The program name to use when not logging to the console"
+            )
+
+        parser.add_argument("--tcp-logging-address"
+            , help = "The address to use for giving log messages to tcp (i.e. localhost:9001)"
+            , default = ""
+            )
+
+        parser.add_argument("--udp-logging-address"
+            , help = "The address to use for giving log messages to udp (i.e. localhost:9001)"
+            , default = ""
             )
 
         parser.add_argument("--syslog-address"
