@@ -156,7 +156,7 @@ describe TestCase, "App":
                 app.mainline(argv)
 
             cli_parser.interpret_args.assert_called_once_with(argv, cli_categories)
-            setup_logging.assert_called_once_with(args_obj, verbose=args_obj.verbose, silent=args_obj.silent, debug=args_obj.debug, syslog=args_obj.syslog, syslog_address=args_obj.syslog_address)
+            setup_logging.assert_called_once_with(args_obj)
             execute.assert_called_once_with(args_obj, args_dict, extra_args, handler)
 
     describe "setup_logging":
@@ -167,7 +167,7 @@ describe TestCase, "App":
 
             app = MyApp()
             args_obj, _, _ = app.make_cli_parser().interpret_args([])
-            logging_handler = app.setup_logging(args_obj, logging_name="blah")
+            logging_handler = app.setup_logging(args_obj)
 
             log = logging.getLogger("blah")
             log.propagate = False
@@ -179,12 +179,12 @@ describe TestCase, "App":
 
             log.removeHandler(logging_handler)
             args_obj, _, _ = app.make_cli_parser().interpret_args(['--verbose'])
-            logging_handler = app.setup_logging(args_obj, verbose=args_obj.verbose, logging_name="blah")
+            logging_handler = app.setup_logging(args_obj)
             log.debug("this one is captured")
 
             log.removeHandler(logging_handler)
             args_obj, _, _ = app.make_cli_parser().interpret_args(['--silent'])
-            logging_handler = app.setup_logging(args_obj, silent=args_obj.silent, logging_name="blah")
+            logging_handler = app.setup_logging(args_obj)
             log.debug("not captured")
             log.warning("not captured")
             log.info("not captured")
@@ -196,7 +196,7 @@ describe TestCase, "App":
             now = datetime.datetime.now()
             date = now.strftime("%Y-%m-%d [^ ]+")
             expect = [
-                    re.compile("{0} INFO    blah            hello there".format(date))
+                  re.compile("{0} INFO    blah            hello there".format(date))
                 , re.compile("{0} ERROR   blah            hmmm".format(date))
                 , re.compile("{0} WARNING blah            yeap".format(date))
                 , re.compile("{0} DEBUG   blah            this one is captured".format(date))
