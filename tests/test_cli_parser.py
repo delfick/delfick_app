@@ -154,6 +154,7 @@ describe TestCase, "CliParser":
                   , "version": False
                   , "logging_program": "my-app"
                   , "syslog_address": "/dev/log"
+                  , "json_console_logs": False
                   , "tcp_logging_address": ""
                   , "udp_logging_address": ""
                   }

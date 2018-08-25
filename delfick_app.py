@@ -292,6 +292,7 @@ class App(object):
             , tcp_address = args_obj.tcp_logging_address
             , only_message = only_message
             , logging_handler_file = self.logging_handler_file
+            , json_to_console = args_obj.json_console_logs
             )
 
         self.setup_other_logging(args_obj, args_obj.verbose, args_obj.silent, args_obj.debug)
@@ -513,6 +514,11 @@ class CliParser(object):
         parser.add_argument("--syslog-address"
             , help = "The address to use for syslog (i.e. /dev/log)"
             , default = ""
+            )
+
+        parser.add_argument("--json-console-logs"
+            , help = "If we haven't set other logging arguments, this will mean we log json lines to the console"
+            , action = "store_true"
             )
 
         parser.add_argument("--version"
