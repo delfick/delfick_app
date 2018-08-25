@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
       name = "delfick_app"
-    , version = "0.9.6"
+    , version = "0.9.7"
     , py_modules = ['delfick_app']
 
     , install_requires =

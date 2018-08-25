@@ -106,6 +106,16 @@ Just use pip::
 
     $ pip install delfick_app
 
+Changelog
+---------
+
+0.9.7 - 25 August 2018
+    * Adding --json-console-logs option which will do logs as json lines to the
+      console
+
+0.9.6
+    No change log kept before this point
+
 Tests
 -----
 
