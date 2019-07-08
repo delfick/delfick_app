@@ -109,6 +109,10 @@ Just use pip::
 Changelog
 ---------
 
+0.9.8 - 8 July 2019
+    * Updated delfick_logging so it doesn't modify what you give it when you
+      give it a dictionary.
+
 0.9.7 - 25 August 2018
     * Adding --json-console-logs option which will do logs as json lines to the
       console
