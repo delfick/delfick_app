@@ -2,12 +2,12 @@ from setuptools import setup
 
 setup(
       name = "delfick_app"
-    , version = "0.9.8"
+    , version = "0.9.9"
     , py_modules = ['delfick_app']
 
     , install_requires =
       [ 'argparse'
-      , 'delfick_error==1.7.8'
+      , 'delfick_error>=1.7.8'
       , 'delfick_logging==0.3.3'
       ]
 
