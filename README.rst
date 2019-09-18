@@ -4,6 +4,11 @@ Delfick App
 A framework to simplify and remove duplication when creating a new application.
 It is opinionated in nature and aims to be declarative.
 
+Deprecated
+----------
+
+This project has been deprecated in favour of https://github.com/delfick/delfick_project
+
 Getting Started
 ---------------
 
